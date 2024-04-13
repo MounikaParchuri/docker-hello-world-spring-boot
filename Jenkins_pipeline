@@ -1,0 +1,41 @@
+pipeline {
+    agent {      
+    node { label 'maven-dev'}     
+    }  
+    environment {
+        DOCKERHUB_CREDENTIALS = credentials('mounika-dockerhub')
+    }
+    stages {
+        stage('clone project') {
+            steps{
+                git 'https://github.com/MounikaParchuri/docker-hello-world-spring-boot.git'
+            }
+        }
+    	stage('Build Project') {
+	    steps {
+      		// build project via maven
+      		sh "/opt/maven/bin/mvn package"
+            }
+    	}
+        stage('Build docker image') {
+            steps {
+                sh 'docker build -t mounikaparchuri/hello-world:$BUILD_NUMBER .'
+            }
+        }
+        stage('login to dockerhub') {
+            steps{
+                sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
+            }
+        }
+        stage('push image') {
+            steps{
+                sh 'docker push mounikaparchuri/hello-world:$BUILD_NUMBER'
+            }
+        }
+        stage('logout docker') {
+            steps{
+                sh 'docker logout'
+            }
+        }
+    }
+}
